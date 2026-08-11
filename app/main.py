@@ -8,7 +8,7 @@ sys.path.append(os.path.dirname(__file__))
 
 import database
 from weather_client import get_forecast
-from decision_engine import calculate_water_balance, decide_irrigation
+from decision_engine import predict_water_need, calculate_water_balance, decide_irrigation
 
 app = Flask(__name__)
 
@@ -51,38 +51,50 @@ def check_irrigation(parcel_id):
     if not weather['success']:
         return jsonify({"success": False, "error": "Hava durumu alınamadı."})
     
-    # 2. Su Bütçesi Hesapla
+    # 2. Makine Öğrenmesi ile Su İhtiyacı Tahmini (Prediction)
+    predicted_need = predict_water_need(
+        temp_max=weather['temperature_max'],
+        humidity=weather['humidity'],
+        precipitation=weather['precipitation'],
+        crop_type=parcel['crop_type']
+    )
+
+    # 3. Su Bütçesi Hesapla
     prev_balance = parcel['water_budget']
     new_balance = calculate_water_balance(
         previous_balance=prev_balance,
         precipitation=weather['precipitation'],
-        crop_type=parcel['crop_type'],
-        temp_max=weather['temperature_max']
+        predicted_need=predicted_need
     )
     
-    # 3. Sulama Kararı Ver
-    decision = decide_irrigation(
-        new_balance=new_balance,
-        humidity=weather['humidity'],
-        precipitation=weather['precipitation']
-    )
+    # 4. Kural Motoru ile Nihai Karar
+    decision = decide_irrigation(new_balance=new_balance)
     
-    # 4. Veritabanını Güncelle
-    database.update_water_budget(parcel_id, new_balance)
+    # 5. Veritabanını Güncelle (Sadece bugün için daha önce kayıt girilmediyse güncelle!)
+    today_prefix = datetime.now().strftime('%Y-%m-%d')
+    history = database.get_irrigation_history(parcel_id)
+    already_checked_today = any(record['date'].startswith(today_prefix) for record in history)
     
-    today = datetime.now().strftime('%Y-%m-%d %H:%M')
-    database.add_irrigation_record(
-        parcel_id=parcel_id,
-        date=today,
-        decision=decision,
-        temp_max=weather['temperature_max'],
-        precipitation=weather['precipitation']
-    )
+    if not already_checked_today:
+        database.update_water_budget(parcel_id, new_balance)
+        database.add_irrigation_record(
+            parcel_id=parcel_id,
+            date=datetime.now().strftime('%Y-%m-%d %H:%M'),
+            decision=decision,
+            temp_max=weather['temperature_max'],
+            precipitation=weather['precipitation']
+        )
+    else:
+        # Zaten bugün kayıt girilmişse, mevcut bütçeyi bozma, sadece güncel bakiyeyi döndür
+        # (Yeniden tıklandığında bütçenin sonsuza kadar düşmesini engeller)
+        new_balance = prev_balance
     
+    # Yeni arayüz talebi için tahmin edilen miktarı da döndürüyoruz
     return jsonify({
         "success": True,
         "decision": decision,
         "new_budget": new_balance,
+        "predicted_need": predicted_need,
         "weather": {
             "temp_max": weather['temperature_max'],
             "precipitation": weather['precipitation'],

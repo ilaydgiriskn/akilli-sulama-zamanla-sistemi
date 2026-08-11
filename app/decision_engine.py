@@ -1,40 +1,50 @@
 import json
 import os
+import joblib
+import pandas as pd
 
-REFERENCE_FILE = os.path.join(os.path.dirname(__file__), '..', 'data', 'reference_table.json')
+MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'water_need_model.pkl')
 
-def load_reference_data():
-    """Ürün su ihtiyacı referans tablosunu yükler."""
-    if not os.path.exists(REFERENCE_FILE):
-        return {}
-    with open(REFERENCE_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def load_ml_model():
+    """Eğitilmiş Makine Öğrenmesi (ML) modelini yükler."""
+    if os.path.exists(MODEL_PATH):
+        return joblib.load(MODEL_PATH)
+    return None
 
-def calculate_water_balance(previous_balance, precipitation, crop_type, temp_max):
+def predict_water_need(temp_max, humidity, precipitation, crop_type):
+    """
+    Random Forest modelini kullanarak günlük su ihtiyacını tahmin eder.
+    """
+    model = load_ml_model()
+    
+    # Model bulunamazsa güvenlik önlemi olarak basit bir fallback
+    if model is None:
+        return 5.0
+        
+    # Modele verilecek Girdi formatı
+    input_data = pd.DataFrame([{
+        'Temperature_C': temp_max,
+        'Humidity': humidity,
+        'Rainfall_mm': precipitation,
+        'Crop_Type': crop_type
+    }])
+    
+    # ML modelinden tahmin al (Sadece 1 satır veri verdiğimiz için index 0)
+    prediction = model.predict(input_data)[0]
+    return round(prediction, 2)
+
+def calculate_water_balance(previous_balance, precipitation, predicted_need):
     """
     Güncel su bütçesini hesaplar.
-    Formül: Güncel Su = Önceki Su + Yağış - Günlük Tüketim
+    Formül: Güncel Su = Önceki Su + Yağış - Tahmini İhtiyaç
     """
-    reference_data = load_reference_data()
-    # Eğer ürün bulunamazsa varsayılan olarak 4.0 mm al
-    crop_info = reference_data.get(crop_type, {})
-    daily_need = crop_info.get("gunluk_su_ihtiyaci_mm", 4.0)
-    
-    # Sıcak hava düzeltmesi (Sıcaklık 30°C üzerindeyse %15 daha fazla su tüketir)
-    if temp_max > 30:
-        daily_need *= 1.15
-        
-    new_balance = previous_balance + precipitation - daily_need
+    new_balance = previous_balance + precipitation - predicted_need
     return round(new_balance, 2)
 
-def decide_irrigation(new_balance, humidity, precipitation, threshold=-15.0):
+def decide_irrigation(new_balance, threshold=-15.0):
     """
-    Su bütçesi ve hava koşullarına göre sulama kararını verir.
+    Su bütçesine göre sulama kararını verir (Açıklanabilir kural).
     """
-    # Nem %70'in üzerindeyse ve 5 mm'den fazla yağış bekleniyorsa ertele
-    if humidity > 70 and precipitation > 5:
-        return "SULAMA GEREKMİYOR (Yağış ve yüksek nem bekleniyor)"
-    
     if new_balance < threshold:
         return "SULAMA ÖNERİLİR"
     else:

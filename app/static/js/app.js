@@ -56,6 +56,68 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Check Irrigation Logic
+    function runIrrigationCheck(parcelId) {
+        const btnOriginalText = btnCheck.innerHTML;
+        btnCheck.innerHTML = '<i class="ph ph-spinner ph-spin"></i> İşleniyor...';
+        btnCheck.disabled = true;
+
+        // "Sistem Bekleniyor" yazısını "Yapay Zeka Analiz Ediyor..." olarak değiştir
+        const resultBox = document.getElementById('ai-result-box');
+        resultBox.style.backgroundColor = 'transparent';
+        resultBox.style.color = 'inherit';
+        document.getElementById('decision-icon').className = 'ph ph-spinner ph-spin';
+        document.getElementById('decision-text').textContent = 'Yapay Zeka Analiz Ediyor...';
+
+        fetch(`/api/parcels/${parcelId}/check_irrigation`, { method: 'POST' })
+            .then(res => res.json())
+            .then(data => {
+                btnCheck.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Yeniden Analiz Et';
+                btnCheck.disabled = false;
+
+                if(data.success) {
+                    // Update UI
+                    document.getElementById('val-temp').textContent = data.weather.temp_max + ' °C';
+                    document.getElementById('val-rain').textContent = data.weather.precipitation + ' mm';
+                    document.getElementById('val-budget').textContent = data.new_budget.toFixed(1) + ' mm';
+                    
+                    document.getElementById('ai-need').textContent = data.predicted_need.toFixed(1) + ' mm';
+                    document.getElementById('ai-rain').textContent = data.weather.precipitation + ' mm';
+                    document.getElementById('ai-budget').textContent = data.new_budget.toFixed(1) + ' mm';
+
+                    const isIrrigate = data.decision.includes('ÖNERİLİR');
+                    
+                    if(isIrrigate) {
+                        resultBox.style.backgroundColor = '#fee2e2';
+                        resultBox.style.color = '#ef4444';
+                        document.getElementById('decision-icon').className = 'ph ph-drop';
+                        document.getElementById('decision-text').textContent = '🔴 Sulama Öneriliyor';
+                    } else {
+                        resultBox.style.backgroundColor = '#d1fae5';
+                        resultBox.style.color = '#10b981';
+                        document.getElementById('decision-icon').className = 'ph ph-check-circle';
+                        document.getElementById('decision-text').textContent = '🟢 Sulama Gerekmiyor';
+                    }
+                    
+                    const explanation = `Makine öğrenmesi modeli mevcut hava ve parsel koşullarına göre günlük su ihtiyacını ${data.predicted_need.toFixed(1)} mm olarak tahmin etmiştir. Beklenen yağış ve mevcut su bütçesi birlikte değerlendirildiğinde ${isIrrigate ? 'sulama yapılması gerekmektedir.' : 'sulama yapılmasına gerek yoktur.'}`;
+                    document.getElementById('ai-explanation').textContent = explanation;
+
+                    loadHistory(parcelId);
+                    loadParcels(); // To update the budget in the sidebar
+                } else {
+                    document.getElementById('decision-icon').className = 'ph ph-warning';
+                    document.getElementById('decision-text').textContent = 'Analiz Hatası!';
+                    alert("Hata: " + data.error);
+                }
+            })
+            .catch(err => {
+                btnCheck.innerHTML = '<i class="ph ph-arrows-clockwise"></i> Tekrar Dene';
+                btnCheck.disabled = false;
+                document.getElementById('decision-icon').className = 'ph ph-warning';
+                document.getElementById('decision-text').textContent = 'Bağlantı Hatası!';
+            });
+    }
+
     // Select Parcel
     function selectParcel(parcel) {
         currentParcelId = parcel.id;
@@ -73,81 +135,22 @@ document.addEventListener('DOMContentLoaded', () => {
         decisionBox.className = 'decision-box mt-2';
         document.getElementById('decision-icon').className = 'ph ph-info';
         document.getElementById('decision-text').textContent = 'Sistem Bekleniyor...';
+        
+        document.getElementById('ai-need').textContent = '- mm';
+        document.getElementById('ai-rain').textContent = '- mm';
+        document.getElementById('ai-budget').textContent = '- mm';
+        document.getElementById('ai-explanation').textContent = '';
 
         loadHistory(parcel.id);
+        
+        // PARSEL SEÇİLDİĞİ ANDA OTOMATİK OLARAK ANALİZİ BAŞLAT
+        runIrrigationCheck(parcel.id);
     }
 
-    // Load History
-    function loadHistory(id) {
-        fetch(`/api/parcels/${id}/history`)
-            .then(res => res.json())
-            .then(data => {
-                historyList.innerHTML = '';
-                if(data.length === 0) {
-                    historyList.innerHTML = '<li class="empty-state">Henüz kayıt yok.</li>';
-                    return;
-                }
-                data.forEach(h => {
-                    const li = document.createElement('li');
-                    const isIrrigate = h.decision.includes('ÖNERİLİR');
-                    const icon = isIrrigate ? '<i class="ph ph-drop text-teal"></i>' : '<i class="ph ph-prohibit"></i>';
-                    li.innerHTML = `
-                        <div>
-                            <strong>${h.date.split(' ')[0]}</strong>
-                            <div style="font-size:0.8rem; color:#6b7280;">Sıcaklık: ${h.temperature_max}°C, Yağış: ${h.precipitation}mm</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:0.5rem; font-weight:600; color:${isIrrigate ? '#10B981':'#6b7280'};">
-                            ${icon} ${isIrrigate ? 'Sulandı' : 'Sulanmadı'}
-                        </div>
-                    `;
-                    historyList.appendChild(li);
-                });
-            });
-    }
-
-    // Check Irrigation
+    // Check Irrigation Button (Yenileme işlevi görecek)
     btnCheck.addEventListener('click', () => {
         if(!currentParcelId) return;
-        
-        const btnOriginalText = btnCheck.innerHTML;
-        btnCheck.innerHTML = '<i class="ph ph-spinner ph-spin"></i> İşleniyor...';
-        btnCheck.disabled = true;
-
-        fetch(`/api/parcels/${currentParcelId}/check_irrigation`, { method: 'POST' })
-            .then(res => res.json())
-            .then(data => {
-                btnCheck.innerHTML = btnOriginalText;
-                btnCheck.disabled = false;
-
-                if(data.success) {
-                    // Update UI
-                    document.getElementById('val-temp').textContent = data.weather.temp_max + ' °C';
-                    document.getElementById('val-rain').textContent = data.weather.precipitation + ' mm';
-                    document.getElementById('val-budget').textContent = data.new_budget.toFixed(1) + ' mm';
-
-                    const decisionBox = document.getElementById('decision-box');
-                    const isIrrigate = data.decision.includes('ÖNERİLİR');
-                    
-                    if(isIrrigate) {
-                        decisionBox.className = 'decision-box mt-2 irrigate';
-                        document.getElementById('decision-icon').className = 'ph ph-plant';
-                    } else {
-                        decisionBox.className = 'decision-box mt-2 no-irrigate';
-                        document.getElementById('decision-icon').className = 'ph ph-cloud-slash';
-                    }
-                    document.getElementById('decision-text').textContent = data.decision;
-
-                    loadHistory(currentParcelId);
-                    loadParcels(); // To update the budget in the sidebar
-                } else {
-                    alert("Hata: " + data.error);
-                }
-            })
-            .catch(err => {
-                btnCheck.innerHTML = btnOriginalText;
-                btnCheck.disabled = false;
-                alert("Bağlantı hatası!");
-            });
+        runIrrigationCheck(currentParcelId);
     });
 
     // Init
