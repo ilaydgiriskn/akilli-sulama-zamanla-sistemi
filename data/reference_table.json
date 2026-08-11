@@ -1,0 +1,14 @@
+{
+  "sebze": {
+    "isim": "Sebzeler",
+    "gunluk_su_ihtiyaci_mm": 4.5
+  },
+  "tahil": {
+    "isim": "Tahıllar",
+    "gunluk_su_ihtiyaci_mm": 3.5
+  },
+  "meyve_bahcesi": {
+    "isim": "Meyve Bahçeleri",
+    "gunluk_su_ihtiyaci_mm": 5.0
+  }
+}
