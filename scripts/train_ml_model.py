@@ -37,7 +37,9 @@ def main():
     df['Water_Need_mm'] = create_synthetic_target(df)
     
     # Modele Girecek Özellikler (API ve Arayüzden kolayca alabileceğimiz özellikler)
-    X = df[['Temperature_C', 'Humidity', 'Rainfall_mm', 'Crop_Type']]
+    # NOT: Rainfall_mm çıkarıldı. Çünkü bitkinin terleme ihtiyacı yağışa bağlı değildir.
+    # Yağış, Karar Motorunda (Water Balance) hesaba katılacak. (Double counting önlemi)
+    X = df[['Temperature_C', 'Humidity', 'Crop_Type']]
     y = df['Water_Need_mm']
     
     # Baseline comparison (Sadece ürün tipinin ortalamasına göre kaba tahmin)
@@ -51,7 +53,7 @@ def main():
     # Model Pipeline (Önişleme + Random Forest)
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Temperature_C', 'Humidity', 'Rainfall_mm']),
+            ('num', StandardScaler(), ['Temperature_C', 'Humidity']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Crop_Type'])
         ])
         
@@ -75,16 +77,15 @@ def main():
     
     importances = rf.feature_importances_
     print("\n--- FEATURE IMPORTANCE ---")
-    crop_importance = sum(importances[3:])
+    crop_importance = sum(importances[2:])
     display_importances = {
         'Sıcaklık (Temperature_C)': importances[0],
         'Nem (Humidity)': importances[1],
-        'Yağış (Rainfall_mm)': importances[2],
         'Ürün Tipi (Crop_Type)': crop_importance
     }
     
     for k, v in sorted(display_importances.items(), key=lambda item: item[1], reverse=True):
-        bar = '█' * int(v * 40)
+        bar = '#' * int(v * 40)
         print(f"{k.ljust(25)} {bar} ({v:.2f})")
     
     model_out_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'water_need_model.pkl')

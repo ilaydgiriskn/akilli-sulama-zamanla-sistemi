@@ -28,7 +28,7 @@ def main():
     humidity_effect = (df['Humidity'] - 50) * -0.05
     df['Water_Need_mm'] = (base + temp_effect + humidity_effect).clip(lower=0.5, upper=15.0)
     
-    X = df[['Temperature_C', 'Humidity', 'Rainfall_mm', 'Crop_Type']]
+    X = df[['Temperature_C', 'Humidity', 'Crop_Type']]
     y = df['Water_Need_mm']
     
     # DÜZELTME: Veri sızıntısını (Data Leakage) önlemek için modeli sadece görmediği %20'lik test verisiyle değerlendirmeliyiz.
@@ -45,27 +45,21 @@ def main():
     print("-" * 50)
     
     # Senaryo 1: Aynı üründe artan sıcaklığın etkisi
-    print("[Senaryo 1] Sebze - Nem %40 - Yağış 0 mm")
+    print("[Senaryo 1] Sebze - Nem %40")
     for temp in [20, 25, 30, 35, 40]:
-        scenario = pd.DataFrame([{'Temperature_C': temp, 'Humidity': 40, 'Rainfall_mm': 0, 'Crop_Type': 'sebze'}])
+        scenario = pd.DataFrame([{'Temperature_C': temp, 'Humidity': 40, 'Crop_Type': 'sebze'}])
         pred = model.predict(scenario)[0]
         print(f"   Sıcaklık {temp}°C -> Tahmini Su İhtiyacı: {pred:.2f} mm")
         
-    print("\n[Senaryo 2] Sebze - Sıcaklık 30°C - Yağış 0 mm (Nemin Etkisi)")
+    print("\n[Senaryo 2] Sebze - Sıcaklık 30°C (Nemin Etkisi)")
     for hum in [20, 40, 60, 80]:
-        scenario = pd.DataFrame([{'Temperature_C': 30, 'Humidity': hum, 'Rainfall_mm': 0, 'Crop_Type': 'sebze'}])
+        scenario = pd.DataFrame([{'Temperature_C': 30, 'Humidity': hum, 'Crop_Type': 'sebze'}])
         pred = model.predict(scenario)[0]
         print(f"   Nem %{hum} -> Tahmini Su İhtiyacı: {pred:.2f} mm")
         
-    print("\n[Senaryo 3] Yağış Etkisi (Sıcaklık 30°C, Nem %40)")
-    for rain in [0, 5, 10, 20]:
-        scenario = pd.DataFrame([{'Temperature_C': 30, 'Humidity': 40, 'Rainfall_mm': rain, 'Crop_Type': 'sebze'}])
-        pred = model.predict(scenario)[0]
-        print(f"   Yağış {rain} mm -> Tahmini Su İhtiyacı: {pred:.2f} mm")
-        
     print("\n==================================================")
     print("SONUÇ: Model mantıksal olarak artan sıcaklıkta daha fazla su,")
-    print("artan nem ve yağışta ise daha az su önermektedir.")
+    print("artan nemde ise daha az su önermektedir.")
     print("Sistemin agronomik tutarlılığı doğrulanmıştır.")
     print("==================================================")
 

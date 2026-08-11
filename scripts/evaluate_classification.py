@@ -24,7 +24,7 @@ def main():
     y_true = df['Irrigation_Need'].apply(lambda x: 0 if x == 'Low' else 1)
     
     # 2. Modelin Tahmini (Predicted Labels): Modelimizin tahmin ettiği su ihtiyacı belli bir eşiğin üzerindeyse (örn: 4.5 mm) Sula (1), altındaysa Sulama (0) kararı verdirelim.
-    X = df[['Temperature_C', 'Humidity', 'Rainfall_mm', 'Crop_Type']]
+    X = df[['Temperature_C', 'Humidity', 'Crop_Type']]
     y_pred_mm = model.predict(X)
     
     # Karar Motoru Mantığı: İhtiyaç > 4.5 mm ise SULA (1), değilse SULAMA (0)

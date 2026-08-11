@@ -29,14 +29,14 @@ def main():
     
     df['Water_Need_mm'] = create_synthetic_target(df)
     
-    X = df[['Temperature_C', 'Humidity', 'Rainfall_mm', 'Crop_Type']]
+    X = df[['Temperature_C', 'Humidity', 'Crop_Type']]
     y = df['Water_Need_mm']
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
     preprocessor = ColumnTransformer(
         transformers=[
-            ('num', StandardScaler(), ['Temperature_C', 'Humidity', 'Rainfall_mm']),
+            ('num', StandardScaler(), ['Temperature_C', 'Humidity']),
             ('cat', OneHotEncoder(handle_unknown='ignore'), ['Crop_Type'])
         ])
         

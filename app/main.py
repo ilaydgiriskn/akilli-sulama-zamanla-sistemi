@@ -55,7 +55,6 @@ def check_irrigation(parcel_id):
     predicted_need = predict_water_need(
         temp_max=weather['temperature_max'],
         humidity=weather['humidity'],
-        precipitation=weather['precipitation'],
         crop_type=parcel['crop_type']
     )
 

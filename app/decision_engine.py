@@ -11,21 +11,23 @@ def load_ml_model():
         return joblib.load(MODEL_PATH)
     return None
 
-def predict_water_need(temp_max, humidity, precipitation, crop_type):
+def predict_water_need(temp_max, humidity, crop_type):
     """
-    Random Forest modelini kullanarak günlük su ihtiyacını tahmin eder.
+    ML modelini kullanarak, sadece sıcaklık, nem ve ürün tipine göre 
+    bitkinin günlük fizyolojik su tüketimini (ETc) tahmin eder.
+    Yağış burada kullanılmaz (Double counting olmaması için).
     """
     model = load_ml_model()
     
     # Model bulunamazsa güvenlik önlemi olarak basit bir fallback
     if model is None:
-        return 5.0
+        return 0.0
         
-    # Modele verilecek Girdi formatı
+    # Modelin beklediği formatta DataFrame oluştur
+    # NOT: 'Rainfall_mm' kolonunu modelin girdilerinden çıkardığımız için burada da siliyoruz.
     input_data = pd.DataFrame([{
         'Temperature_C': temp_max,
         'Humidity': humidity,
-        'Rainfall_mm': precipitation,
         'Crop_Type': crop_type
     }])
     
