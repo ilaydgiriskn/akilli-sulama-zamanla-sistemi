@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from imblearn.over_sampling import SMOTE
+from imblearn.over_sampling import SMOTE, SMOTENC
 from imblearn.pipeline import Pipeline as ImbPipeline
 import warnings
 warnings.filterwarnings('ignore')
@@ -36,17 +36,24 @@ def main():
             ('cat', OneHotEncoder(handle_unknown='ignore'), cat_cols)
         ])
     
-    # 3. SMOTE + Random Forest Pipeline
-    print("Makine Öğrenmesi Pipeline (SMOTE + RF) kuruluyor...")
+    # 3. SMOTENC + Random Forest Pipeline
+    print("Makine Öğrenmesi Pipeline (SMOTENC + RF) kuruluyor...")
+    
+    # SMOTENC için kategorik kolon indeksleri
+    cat_indices = [X.columns.get_loc(col) for col in cat_cols]
+    
+    # DİKKAT: SMOTENC kategorik verileri (OneHot yapılmadan önce) almalı, 
+    # ardından preprocessor (OneHot ve Scale) devreye girmelidir.
     model = ImbPipeline([
+        ('smotenc', SMOTENC(categorical_features=cat_indices, random_state=42)),
         ('preprocessor', preprocessor),
-        ('smote', SMOTE(random_state=42)),
         ('classifier', RandomForestClassifier(n_estimators=100, random_state=42, class_weight='balanced'))
     ])
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    # Sınıf dağılımını korumak için stratify=y kullanıldı
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     
-    print("Model eğitiliyor (Bu işlem SMOTE nedeniyle birkaç saniye sürebilir)...")
+    print("Model eğitiliyor (Bu işlem SMOTENC nedeniyle birkaç saniye sürebilir)...")
     model.fit(X_train, y_train)
     
     y_pred = model.predict(X_test)
