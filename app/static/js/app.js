@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('decision-icon').className = 'ph ph-spinner ph-spin';
         document.getElementById('decision-text').textContent = 'Yapay Zeka Analiz Ediyor...';
         document.getElementById('ai-confidence').textContent = '';
+        document.getElementById('ai-confidence-info').style.display = 'none';
         document.getElementById('ai-explanation').textContent = '';
 
         fetch(`/api/parcels/${parcelId}/check_irrigation`, { method: 'POST' })
@@ -87,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(data.success) {
                     // Update UI (Open-Meteo Weather)
                     document.getElementById('val-temp').textContent = data.weather.temp_max + ' °C';
+                    document.getElementById('val-humidity').textContent = data.weather.humidity + ' %';
                     document.getElementById('val-rain').textContent = data.weather.precipitation + ' mm';
                     document.getElementById('val-wind').textContent = data.weather.wind_speed_kmh + ' km/h';
                     
@@ -96,20 +98,21 @@ document.addEventListener('DOMContentLoaded', () => {
                         resultBox.style.backgroundColor = '#fee2e2';
                         resultBox.style.color = '#ef4444';
                         document.getElementById('decision-icon').className = 'ph ph-warning-circle';
-                        document.getElementById('decision-text').textContent = '🔴 Yüksek İhtiyaç';
+                        document.getElementById('decision-text').textContent = '🔴 Yüksek Sulama İhtiyacı';
                     } else if(decision === 'Medium') {
                         resultBox.style.backgroundColor = '#fef3c7';
                         resultBox.style.color = '#d97706'; // Darker amber for contrast
                         document.getElementById('decision-icon').className = 'ph ph-info';
-                        document.getElementById('decision-text').textContent = '🟡 Orta İhtiyaç';
+                        document.getElementById('decision-text').textContent = '🟡 Orta Seviyede Sulama İhtiyacı';
                     } else { // Low
                         resultBox.style.backgroundColor = '#d1fae5';
                         resultBox.style.color = '#10b981';
                         document.getElementById('decision-icon').className = 'ph ph-check-circle';
-                        document.getElementById('decision-text').textContent = '🟢 Düşük İhtiyaç';
+                        document.getElementById('decision-text').textContent = '🟢 Sulama Gerekmiyor';
                     }
                     
-                    document.getElementById('ai-confidence').textContent = 'Model Güven Skoru: %' + data.confidence;
+                    document.getElementById('ai-confidence').textContent = 'Model Tahmin Güveni: %' + data.confidence;
+                    document.getElementById('ai-confidence-info').style.display = 'inline-block';
                     document.getElementById('ai-explanation').textContent = data.message;
 
                     loadHistory(parcelId);
@@ -137,6 +140,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Reset dashboard values
         document.getElementById('val-temp').textContent = '- °C';
+        document.getElementById('val-humidity').textContent = '- %';
         document.getElementById('val-rain').textContent = '- mm';
         document.getElementById('val-wind').textContent = '- km/h';
         

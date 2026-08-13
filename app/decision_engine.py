@@ -21,9 +21,9 @@ FEATURE_COLUMNS = [
 ]
 
 MESSAGES = {
-    "Low": "Sulama ihtiyacı düşük.",
-    "Medium": "Orta seviyede sulama ihtiyacı bulunmaktadır.",
-    "High": "Yüksek sulama ihtiyacı tespit edildi."
+    "Low": "Mevcut toprak ve çevresel koşullar sulama ihtiyacının düşük olduğunu göstermektedir. Sulama gerekmiyor.",
+    "Medium": "Toprak ve hava koşulları sulama ihtiyacının arttığını göstermektedir. Toprak nemini yakından takip etmeniz önerilir.",
+    "High": "Mevcut çevresel ve toprak koşulları bitkinin yüksek düzeyde su stresi yaşadığını göstermektedir. Acil sulama planlaması yapılması önerilir."
 }
 
 def load_ml_model():
