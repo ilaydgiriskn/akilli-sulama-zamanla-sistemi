@@ -23,10 +23,12 @@ def init_db():
             latitude REAL NOT NULL,
             longitude REAL NOT NULL,
             crop_type TEXT NOT NULL,
-            soil_type TEXT NOT NULL,
+            crop_growth_stage TEXT NOT NULL,
+            season TEXT NOT NULL,
+            mulching_used TEXT NOT NULL,
+            soil_moisture REAL NOT NULL,
             soil_ph REAL NOT NULL,
-            field_area REAL NOT NULL,
-            region TEXT NOT NULL
+            soil_type TEXT NOT NULL
         )
     ''')
     
@@ -46,13 +48,13 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_parcel(name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region):
+def add_parcel(name, latitude, longitude, crop_type, crop_growth_stage, season, mulching_used, soil_moisture, soil_ph, soil_type):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO parcel (name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ''', (name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region))
+        INSERT INTO parcel (name, latitude, longitude, crop_type, crop_growth_stage, season, mulching_used, soil_moisture, soil_ph, soil_type)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (name, latitude, longitude, crop_type, crop_growth_stage, season, mulching_used, soil_moisture, soil_ph, soil_type))
     parcel_id = cursor.lastrowid
     conn.commit()
     conn.close()

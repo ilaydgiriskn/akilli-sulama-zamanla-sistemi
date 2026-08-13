@@ -5,51 +5,62 @@ import pandas as pd
 
 MODEL_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'water_need_model.pkl')
 
+# Modelin tam olarak beklediği sütun sırası
+FEATURE_COLUMNS = [
+    'Temperature_C',
+    'Humidity',
+    'Rainfall_mm',
+    'Wind_Speed_kmh',
+    'Soil_Moisture',
+    'Soil_pH',
+    'Crop_Type',
+    'Crop_Growth_Stage',
+    'Season',
+    'Mulching_Used',
+    'Soil_Type'
+]
+
+MESSAGES = {
+    "Low": "Sulama ihtiyacı düşük.",
+    "Medium": "Orta seviyede sulama ihtiyacı bulunmaktadır.",
+    "High": "Yüksek sulama ihtiyacı tespit edildi."
+}
+
 def load_ml_model():
     """Eğitilmiş Makine Öğrenmesi (ML) modelini yükler."""
     if os.path.exists(MODEL_PATH):
         return joblib.load(MODEL_PATH)
     return None
 
-def predict_irrigation_decision(temp_max, humidity, rainfall, wind_speed, soil_moisture, soil_ph, field_area, crop_type, soil_type, region):
+def predict_irrigation_decision(input_data_dict):
     """
-    ML Sınıflandırma modelini kullanarak, 
-    doğrudan 'Low', 'Medium', veya 'High' kararı verir.
-    Ayrıca karar olasılığını (%) döndürür.
+    ML modelini doğrudan çağırarak sonucu oluşturur.
+    input_data_dict içinde 11 feature eksiksiz bulunmalıdır.
     """
+    # 1. Eksik veri kontrolü
+    for col in FEATURE_COLUMNS:
+        if col not in input_data_dict:
+            return {"error": f"{col} bilgisi gerekli."}
+            
+    # 2. DataFrame oluştur ve sadece FEATURE_COLUMNS sırasına göre diz
+    input_df = pd.DataFrame([input_data_dict])
+    input_df = input_df[FEATURE_COLUMNS]
+    
+    # 3. Model yükle ve tahmin yap
     model = load_ml_model()
-    
     if model is None:
-        return {"decision": "SİSTEM HATASI", "confidence": 0}
+        return {"error": "ML Modeli (.pkl) bulunamadı veya yüklenemedi."}
         
-    input_data = pd.DataFrame([{
-        'Temperature_C': temp_max,
-        'Humidity': humidity,
-        'Rainfall_mm': rainfall,
-        'Wind_Speed_kmh': wind_speed,
-        'Soil_Moisture': soil_moisture,
-        'Soil_pH': soil_ph,
-        'Field_Area_hectare': field_area,
-        'Crop_Type': crop_type,
-        'Soil_Type': soil_type,
-        'Region': region
-    }])
-    
-    # SınıflandırmaTahmini (Low, Medium, High)
-    prediction = model.predict(input_data)[0]
-    
-    # Olasılık değerleri (Low, Medium, High)
-    # model.classes_ dizisi olasılıkların sırasını verir
-    probabilities = model.predict_proba(input_data)[0]
-    class_index = list(model.classes_).index(prediction)
-    confidence = round(probabilities[class_index] * 100, 1)
-    
-    # Uygulama Dili Çevirisi
-    if prediction == 'High':
-        decision_text = "SULAMA ÖNERİLİR"
-    elif prediction == 'Medium':
-        decision_text = "SULAMA İHTİYACI ORTA"
-    else:
-        decision_text = "SULAMA GEREKMİYOR"
+    try:
+        prediction = model.predict(input_df)[0]
+        probabilities = model.predict_proba(input_df)[0]
+        class_index = list(model.classes_).index(prediction)
+        confidence = round(probabilities[class_index] * 100, 1)
         
-    return {"decision": decision_text, "confidence": confidence, "raw_prediction": prediction}
+        return {
+            "prediction": prediction,
+            "confidence": confidence,
+            "message": MESSAGES.get(prediction, "Bilinmeyen durum tespit edildi.")
+        }
+    except Exception as e:
+        return {"error": f"Model tahmin sırasında bir hata oluşturdu: {str(e)}"}
