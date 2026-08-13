@@ -140,6 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('val-rain').textContent = '- mm';
         document.getElementById('val-wind').textContent = '- km/h';
         
+        // Doldurulan parsel verilerini ekrana yansıt
+        document.getElementById('det-crop').textContent = parcel.crop_type;
+        document.getElementById('det-stage').textContent = parcel.crop_growth_stage || 'Bilinmiyor';
+        document.getElementById('det-soil').textContent = parcel.soil_type;
+        document.getElementById('det-moisture').textContent = parcel.soil_moisture;
+        document.getElementById('det-ph').textContent = parcel.soil_ph;
+        document.getElementById('det-season').textContent = parcel.season || 'Bilinmiyor';
+        document.getElementById('det-mulch').textContent = parcel.mulching_used === 'Yes' ? 'Var' : 'Yok';
+
         const decisionBox = document.getElementById('decision-box');
         decisionBox.className = 'decision-box mt-2';
         document.getElementById('decision-icon').className = 'ph ph-info';

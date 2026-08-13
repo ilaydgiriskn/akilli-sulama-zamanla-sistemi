@@ -122,6 +122,20 @@
                     <h2 id="active-parcel-name">Lütfen Bir Parsel Seçin</h2>
                     
                     <div id="dashboard-content" class="hidden">
+                        <!-- Parsel Profil Detayları -->
+                        <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-size: 0.9rem; color: #4b5563;">
+                            <h4 style="margin-top:0; margin-bottom:0.75rem; color:#374151; border-bottom:1px solid #e5e7eb; padding-bottom:0.5rem;"><i class="ph ph-list-dashes"></i> Parsel Profili (Sabit Veriler)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem;">
+                                <div><i class="ph ph-plant"></i> <strong>Ürün:</strong> <span id="det-crop">-</span></div>
+                                <div><i class="ph ph-leaf"></i> <strong>Evre:</strong> <span id="det-stage">-</span></div>
+                                <div><i class="ph ph-mountains"></i> <strong>Toprak:</strong> <span id="det-soil">-</span></div>
+                                <div><i class="ph ph-drop-half-bottom"></i> <strong>Nem:</strong> %<span id="det-moisture">-</span></div>
+                                <div><i class="ph ph-test-tube"></i> <strong>pH:</strong> <span id="det-ph">-</span></div>
+                                <div><i class="ph ph-sun"></i> <strong>Mevsim:</strong> <span id="det-season">-</span></div>
+                                <div><i class="ph ph-layers-intersection"></i> <strong>Malçlama:</strong> <span id="det-mulch">-</span></div>
+                            </div>
+                        </div>
+
                         <div class="weather-widgets">
                             <div class="widget">
                                 <i class="ph ph-thermometer-hot text-orange"></i>
