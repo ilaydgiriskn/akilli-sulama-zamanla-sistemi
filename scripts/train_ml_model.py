@@ -21,8 +21,11 @@ def main():
     y = df['Irrigation_Need']
     
     # 1. Dinamik ve Statik Özellikler (Features)
-    num_cols = ['Temperature_C', 'Humidity', 'Rainfall_mm', 'Wind_Speed_kmh', 'Soil_Moisture', 'Soil_pH', 'Field_Area_hectare']
-    cat_cols = ['Crop_Type', 'Soil_Type', 'Region']
+    # Çevresel Veriler + Toprak Verileri (Sayısal)
+    num_cols = ['Temperature_C', 'Humidity', 'Rainfall_mm', 'Wind_Speed_kmh', 'Soil_Moisture', 'Soil_pH']
+    
+    # Tarımsal Bilgiler + Toprak Tipi (Kategorik)
+    cat_cols = ['Crop_Type', 'Crop_Growth_Stage', 'Season', 'Mulching_Used', 'Soil_Type']
     
     X = df[num_cols + cat_cols]
     
