@@ -1,0 +1,24 @@
+Sığ Karar Ağacı (Max Depth=3) ile Öğrenilen Temel Kurallar:
+============================================================
+|--- Soil_Moisture <= 24.98
+|   |--- Crop_Growth_Stage_Sowing <= 0.50
+|   |   |--- Crop_Growth_Stage_Harvest <= 0.50
+|   |   |   |--- class: Medium
+|   |   |--- Crop_Growth_Stage_Harvest >  0.50
+|   |   |   |--- class: Medium
+|   |--- Crop_Growth_Stage_Sowing >  0.50
+|   |   |--- Mulching_Used_Yes <= 0.50
+|   |   |   |--- class: Medium
+|   |   |--- Mulching_Used_Yes >  0.50
+|   |   |   |--- class: Low
+|--- Soil_Moisture >  24.98
+|   |--- Rainfall_mm <= 299.79
+|   |   |--- Crop_Growth_Stage_Vegetative <= 0.50
+|   |   |   |--- class: Medium
+|   |   |--- Crop_Growth_Stage_Vegetative >  0.50
+|   |   |   |--- class: Medium
+|   |--- Rainfall_mm >  299.79
+|   |   |--- Crop_Growth_Stage_Flowering <= 0.50
+|   |   |   |--- class: Low
+|   |   |--- Crop_Growth_Stage_Flowering >  0.50
+|   |   |   |--- class: Low
