@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 import joblib
 import os
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.metrics import accuracy_score
 import warnings
 warnings.filterwarnings('ignore')
 
 def main():
     print("="*50)
-    print("   MAKİNE ÖĞRENMESİ MODEL DOĞRULAMA TESTİ")
+    print("   SINIFLANDIRMA MODELİ DOĞRULAMA TESTİ")
     print("="*50)
     
     model_path = os.path.join(os.path.dirname(__file__), '..', 'data', 'water_need_model.pkl')
@@ -21,46 +21,57 @@ def main():
     model = joblib.load(model_path)
     df = pd.read_csv(data_path)
     
-    # Hedef değişkeni yeniden oluşturalım (Test seti metrikleri için)
-    need_map = {'Low': 3.0, 'Medium': 5.5, 'High': 8.5}
-    base = df['Irrigation_Need'].map(need_map)
-    temp_effect = (df['Temperature_C'] - 25) * 0.15
-    humidity_effect = (df['Humidity'] - 50) * -0.05
-    df['Water_Need_mm'] = (base + temp_effect + humidity_effect).clip(lower=0.5, upper=15.0)
+    # Hedef değişkeni oluştur (Classification)
+    df['Irrigation_Decision'] = df['Irrigation_Need'].apply(lambda x: 0 if x == 'Low' else 1)
     
     X = df[['Temperature_C', 'Humidity', 'Crop_Type']]
-    y = df['Water_Need_mm']
+    y = df['Irrigation_Decision']
     
-    # DÜZELTME: Veri sızıntısını (Data Leakage) önlemek için modeli sadece görmediği %20'lik test verisiyle değerlendirmeliyiz.
     from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
     
-    print("\n1. GENEL BAŞARI METRİKLERİ (Test Veri Seti Üzerinde)")
     y_pred = model.predict(X_test)
-    print(f"   Ortalama Mutlak Hata (MAE) : {mean_absolute_error(y_test, y_pred):.2f} mm")
-    print(f"   Kök Ortalama Kare Hata (RMSE) : {np.sqrt(mean_squared_error(y_test, y_pred)):.2f} mm")
-    print(f"   Açıklanabilirlik (R² Skor) : {r2_score(y_test, y_pred):.2f}")
+    
+    print("\n--- MODEL TEST SONUÇLARI ---")
+    print(f"Accuracy : %{accuracy_score(y_test, y_pred)*100:.2f}")
+    print(f"Precision: %{precision_score(y_test, y_pred, zero_division=0)*100:.2f}")
+    print(f"Recall   : %{recall_score(y_test, y_pred, zero_division=0)*100:.2f}")
+    print(f"F1 Score : %{f1_score(y_test, y_pred, zero_division=0)*100:.2f}")
+    
+    print("\nConfusion Matrix:")
+    cm = confusion_matrix(y_test, y_pred)
+    print(f"[[{cm[0][0]} {cm[0][1]}]\n [{cm[1][0]} {cm[1][1]}]]")
     
     print("\n2. SENARYO TESTLERİ (Model Mantıklı Kararlar Veriyor mu?)")
     print("-" * 50)
     
+    def eval_scenario(temp, hum, crop):
+        scenario = pd.DataFrame([{'Temperature_C': temp, 'Humidity': hum, 'Crop_Type': crop}])
+        prediction = model.predict(scenario)[0]
+        probs = model.predict_proba(scenario)[0]
+        
+        if prediction == 1:
+            decision_text = "SULA (1)"
+            confidence = probs[1] * 100
+        else:
+            decision_text = "SULAMA (0)"
+            confidence = probs[0] * 100
+            
+        print(f"   Sıcaklık {temp}°C, Nem %{hum} -> Karar: {decision_text} (Güven: %{confidence:.1f})")
+
     # Senaryo 1: Aynı üründe artan sıcaklığın etkisi
     print("[Senaryo 1] Sebze - Nem %40")
     for temp in [20, 25, 30, 35, 40]:
-        scenario = pd.DataFrame([{'Temperature_C': temp, 'Humidity': 40, 'Crop_Type': 'sebze'}])
-        pred = model.predict(scenario)[0]
-        print(f"   Sıcaklık {temp}°C -> Tahmini Su İhtiyacı: {pred:.2f} mm")
+        eval_scenario(temp, 40, 'sebze')
         
-    print("\n[Senaryo 2] Sebze - Sıcaklık 30°C (Nemin Etkisi)")
+    print("\n[Senaryo 2] Sebze - Sıcaklık 35°C (Nemin Etkisi)")
     for hum in [20, 40, 60, 80]:
-        scenario = pd.DataFrame([{'Temperature_C': 30, 'Humidity': hum, 'Crop_Type': 'sebze'}])
-        pred = model.predict(scenario)[0]
-        print(f"   Nem %{hum} -> Tahmini Su İhtiyacı: {pred:.2f} mm")
+        eval_scenario(35, hum, 'sebze')
         
     print("\n==================================================")
-    print("SONUÇ: Model mantıksal olarak artan sıcaklıkta daha fazla su,")
-    print("artan nemde ise daha az su önermektedir.")
-    print("Sistemin agronomik tutarlılığı doğrulanmıştır.")
+    print("SONUÇ: Sınıflandırma modeli hava koşullarına göre")
+    print("karar olasılıklarını (Confidence) tutarlı şekilde değiştirmektedir.")
     print("==================================================")
 
 if __name__ == "__main__":

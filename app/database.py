@@ -23,7 +23,10 @@ def init_db():
             latitude REAL NOT NULL,
             longitude REAL NOT NULL,
             crop_type TEXT NOT NULL,
-            water_budget REAL DEFAULT 0.0
+            soil_type TEXT NOT NULL,
+            soil_ph REAL NOT NULL,
+            field_area REAL NOT NULL,
+            region TEXT NOT NULL
         )
     ''')
     
@@ -43,13 +46,13 @@ def init_db():
     conn.commit()
     conn.close()
 
-def add_parcel(name, latitude, longitude, crop_type, water_budget=0.0):
+def add_parcel(name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute('''
-        INSERT INTO parcel (name, latitude, longitude, crop_type, water_budget)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (name, latitude, longitude, crop_type, water_budget))
+        INSERT INTO parcel (name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    ''', (name, latitude, longitude, crop_type, soil_type, soil_ph, field_area, region))
     parcel_id = cursor.lastrowid
     conn.commit()
     conn.close()
@@ -71,14 +74,7 @@ def get_parcel(parcel_id):
     conn.close()
     return dict(row) if row else None
 
-def update_water_budget(parcel_id, new_budget):
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        UPDATE parcel SET water_budget = ? WHERE id = ?
-    ''', (new_budget, parcel_id))
-    conn.commit()
-    conn.close()
+
 
 def add_irrigation_record(parcel_id, date, decision, temp_max, precipitation):
     conn = get_connection()

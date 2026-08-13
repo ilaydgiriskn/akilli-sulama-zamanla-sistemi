@@ -32,7 +32,13 @@ def add_parcel():
     lon = float(data.get('longitude'))
     crop = data.get('crop_type')
     
-    parcel_id = database.add_parcel(name, lat, lon, crop)
+    # Frontend henüz güncellenmediği için şimdilik varsayılan değerler ekleyelim
+    soil_type = data.get('soil_type', 'Loamy')
+    soil_ph = float(data.get('soil_ph', 6.5))
+    field_area = float(data.get('field_area', 2.0))
+    region = data.get('region', 'Central')
+    
+    parcel_id = database.add_parcel(name, lat, lon, crop, soil_type, soil_ph, field_area, region)
     return jsonify({"success": True, "parcel_id": parcel_id})
 
 @app.route('/api/parcels/<int:parcel_id>/history', methods=['GET'])
@@ -55,7 +61,14 @@ def check_irrigation(parcel_id):
     ai_result = predict_irrigation_decision(
         temp_max=weather['temperature_max'],
         humidity=weather['humidity'],
-        crop_type=parcel['crop_type']
+        rainfall=weather['precipitation'],
+        wind_speed=weather['wind_speed_kmh'],
+        soil_moisture=weather['soil_moisture'],
+        soil_ph=parcel['soil_ph'],
+        field_area=parcel['field_area'],
+        crop_type=parcel['crop_type'],
+        soil_type=parcel['soil_type'],
+        region=parcel['region']
     )
     
     decision = ai_result['decision']
@@ -79,10 +92,13 @@ def check_irrigation(parcel_id):
         "success": True,
         "decision": decision,
         "confidence": confidence,
+        "raw_prediction": ai_result.get('raw_prediction'),
         "weather": {
             "temp_max": weather['temperature_max'],
             "precipitation": weather['precipitation'],
-            "humidity": weather['humidity']
+            "humidity": weather['humidity'],
+            "wind_speed_kmh": weather['wind_speed_kmh'],
+            "soil_moisture": weather['soil_moisture']
         }
     })
 
