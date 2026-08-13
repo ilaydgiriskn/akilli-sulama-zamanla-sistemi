@@ -11,43 +11,32 @@ def load_ml_model():
         return joblib.load(MODEL_PATH)
     return None
 
-def predict_water_need(temp_max, humidity, crop_type):
+def predict_irrigation_decision(temp_max, humidity, crop_type):
     """
-    ML modelini kullanarak, sadece sıcaklık, nem ve ürün tipine göre 
-    bitkinin günlük fizyolojik su tüketimini (ETc) tahmin eder.
-    Yağış burada kullanılmaz (Double counting olmaması için).
+    ML Sınıflandırma modelini kullanarak, 
+    doğrudan 'Sulama (0)' veya 'Sula (1)' kararı verir.
+    Ayrıca karar olasılığını (%) döndürür.
     """
     model = load_ml_model()
     
-    # Model bulunamazsa güvenlik önlemi olarak basit bir fallback
     if model is None:
-        return 0.0
+        return {"decision": "SİSTEM HATASI", "confidence": 0}
         
-    # Modelin beklediği formatta DataFrame oluştur
-    # NOT: 'Rainfall_mm' kolonunu modelin girdilerinden çıkardığımız için burada da siliyoruz.
     input_data = pd.DataFrame([{
         'Temperature_C': temp_max,
         'Humidity': humidity,
         'Crop_Type': crop_type
     }])
     
-    # ML modelinden tahmin al (Sadece 1 satır veri verdiğimiz için index 0)
+    # SınıflandırmaTahmini (0 veya 1)
     prediction = model.predict(input_data)[0]
-    return round(prediction, 2)
-
-def calculate_water_balance(previous_balance, precipitation, predicted_need):
-    """
-    Güncel su bütçesini hesaplar.
-    Formül: Güncel Su = Önceki Su + Yağış - Tahmini İhtiyaç
-    """
-    new_balance = previous_balance + precipitation - predicted_need
-    return round(new_balance, 2)
-
-def decide_irrigation(new_balance, threshold=-15.0):
-    """
-    Su bütçesine göre sulama kararını verir (Açıklanabilir kural).
-    """
-    if new_balance < threshold:
-        return "SULAMA ÖNERİLİR"
+    
+    # Olasılık değerleri (0 olma ihtimali, 1 olma ihtimali)
+    probabilities = model.predict_proba(input_data)[0]
+    
+    if prediction == 1:
+        confidence = round(probabilities[1] * 100, 1)
+        return {"decision": "SULAMA ÖNERİLİR", "confidence": confidence}
     else:
-        return "SULAMA GEREKMİYOR"
+        confidence = round(probabilities[0] * 100, 1)
+        return {"decision": "SULAMA GEREKMİYOR", "confidence": confidence}
