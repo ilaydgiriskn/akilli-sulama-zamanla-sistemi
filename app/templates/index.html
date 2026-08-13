@@ -38,23 +38,69 @@
                     <h2><i class="ph ph-plus-circle"></i> Yeni Parsel Ekle</h2>
                     <form id="add-parcel-form">
                         <div class="form-group">
-                            <input type="text" id="p-name" placeholder="Parsel Adı (Örn: Arka Bahçe)" required>
+                            <input type="text" id="p-name" placeholder="Parsel Adı" required>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <input type="number" step="0.0001" id="p-lat" placeholder="Enlem" style="flex:1" required>
+                            <input type="number" step="0.0001" id="p-lon" placeholder="Boylam" style="flex:1" required>
                         </div>
                         <div class="form-group">
-                            <input type="number" step="0.0001" id="p-lat" placeholder="Enlem (Örn: 39.77)" required>
-                        </div>
-                        <div class="form-group">
-                            <input type="number" step="0.0001" id="p-lon" placeholder="Boylam (Örn: 30.52)" required>
-                        </div>
-                        <div class="form-group">
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Ürün Tipi</label>
                             <select id="p-crop" required>
-                                <option value="" disabled selected>Ürün Seçin</option>
-                                <option value="sebze">Sebze</option>
-                                <option value="tahil">Tahıl</option>
-                                <option value="meyve_bahcesi">Meyve Bahçesi</option>
+                                <option value="Wheat">Buğday (Wheat)</option>
+                                <option value="Corn">Mısır (Corn)</option>
+                                <option value="Cotton">Pamuk (Cotton)</option>
+                                <option value="Soybean">Soya (Soybean)</option>
+                                <option value="Tomato">Domates (Tomato)</option>
+                                <option value="Potato">Patates (Potato)</option>
+                                <option value="Rice">Pirinç (Rice)</option>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary w-100">Parseli Ekle</button>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Büyüme Evresi</label>
+                            <select id="p-stage" required>
+                                <option value="Vegetative">Büyüme (Vegetative)</option>
+                                <option value="Flowering">Çiçeklenme (Flowering)</option>
+                                <option value="Yielding">Hasat/Meyve (Yielding)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Toprak Tipi</label>
+                            <select id="p-soil-type" required>
+                                <option value="Loamy">Tınlı (Loamy)</option>
+                                <option value="Sandy">Kumlu (Sandy)</option>
+                                <option value="Clay">Killi (Clay)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <div class="form-group" style="flex:1; margin-bottom: 0;">
+                                <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Nem (%)</label>
+                                <input type="number" id="p-soil-moisture" placeholder="Örn: 30" required>
+                            </div>
+                            <div class="form-group" style="flex:1; margin-bottom: 0;">
+                                <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">pH</label>
+                                <input type="number" step="0.1" id="p-soil-ph" placeholder="Örn: 6.5" required>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                            <div class="form-group" style="flex:1; margin-bottom: 0;">
+                                <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Mevsim</label>
+                                <select id="p-season" required>
+                                    <option value="Spring">İlkbahar</option>
+                                    <option value="Summer">Yaz</option>
+                                    <option value="Autumn">Sonbahar</option>
+                                    <option value="Winter">Kış</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="flex:1; margin-bottom: 0;">
+                                <label style="display: block; font-size: 0.9rem; margin-bottom: 0.3rem; color: #6b7280;">Malçlama</label>
+                                <select id="p-mulching" required>
+                                    <option value="No">Yok (No)</option>
+                                    <option value="Yes">Var (Yes)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 mt-2">Parseli Ekle</button>
                     </form>
                 </div>
             </div>
@@ -81,10 +127,10 @@
                                 </div>
                             </div>
                             <div class="widget">
-                                <i class="ph ph-drop text-teal"></i>
+                                <i class="ph ph-wind text-teal"></i>
                                 <div class="widget-info">
-                                    <span class="label">Nem</span>
-                                    <span class="value" id="val-humidity">- %</span>
+                                    <span class="label">Rüzgar</span>
+                                    <span class="value" id="val-wind">- km/h</span>
                                 </div>
                             </div>
                         </div>
@@ -96,7 +142,11 @@
                                 <i id="decision-icon"></i> <span id="decision-text">Sistem Bekleniyor...</span>
                             </div>
                             
-                            <div style="text-align: center; font-size: 1.1rem; color: #4b5563;" id="ai-explanation">
+                            <div style="text-align: center; font-size: 1.2rem; font-weight: 600; color: #4b5563; margin-bottom: 0.5rem;" id="ai-confidence">
+                                <!-- Confidence text -->
+                            </div>
+
+                            <div style="text-align: center; font-size: 1.1rem; color: #6b7280;" id="ai-explanation">
                                 <!-- Explanation text -->
                             </div>
                         </div>
